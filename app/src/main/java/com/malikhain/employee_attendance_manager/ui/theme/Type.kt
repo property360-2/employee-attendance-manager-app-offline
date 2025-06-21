@@ -1,0 +1,49 @@
+package com.malikhain.employee_attendance_manager.ui.theme
+
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.googlefonts.GoogleFont
+import androidx.compose.ui.unit.sp
+import com.malikhain.employee_attendance_manager.R
+
+val provider = GoogleFont.Provider(
+    providerAuthority = "com.google.android.gms.fonts",
+    providerPackage = "com.google.android.gms",
+    certificates = R.array.com_google_android_gms_fonts_certs
+)
+
+val poppinsFontName = GoogleFont("Poppins")
+
+val poppinsFamily = FontFamily(
+    Font(googleFont = poppinsFontName, fontProvider = provider),
+    Font(googleFont = poppinsFontName, fontProvider = provider, weight = FontWeight.Bold),
+    Font(googleFont = poppinsFontName, fontProvider = provider, weight = FontWeight.Medium),
+    Font(googleFont = poppinsFontName, fontProvider = provider, weight = FontWeight.SemiBold),
+)
+
+val Typography = Typography(
+    bodyLarge = TextStyle(
+        fontFamily = poppinsFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
+    ),
+    titleLarge = TextStyle(
+        fontFamily = poppinsFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.sp
+    ),
+    labelSmall = TextStyle(
+        fontFamily = poppinsFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
+    )
+)
