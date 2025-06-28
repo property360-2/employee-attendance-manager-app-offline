@@ -106,3 +106,28 @@ fun RegisterScreen(navController: NavController) {
         }
     }
 }
+
+// TODO: Add password strength indicator with visual feedback
+// TODO: Implement email verification for admin registration
+// TODO: Add terms and conditions acceptance checkbox
+// TODO: Support for admin role selection (super admin, regular admin, etc.)
+// TODO: Add profile picture upload during registration
+// TODO: Implement password confirmation validation with real-time feedback
+// TODO: Add password requirements display and validation
+// TODO: Implement email validation with proper regex patterns
+// TODO: Add admin approval workflow for new registrations
+// TODO: Show password strength meter with color coding
+// TODO: Add profile setup wizard after successful registration
+// TODO: Implement username availability check in real-time
+// TODO: Add registration confirmation email
+// TODO: Support for organization/company details during registration
+// TODO: Add admin invitation system for multi-admin setups
+// TODO: Implement registration analytics and tracking
+// TODO: Add CAPTCHA for bot prevention during registration
+// TODO: Support for social login integration (Google, Microsoft)
+// TODO: Add registration success page with next steps
+// TODO: Implement admin onboarding tutorial after registration
+// TODO: Add data privacy and GDPR compliance notices
+// TODO: Support for custom admin permissions and roles
+// TODO: Add registration audit trail for security
+// TODO: Implement admin profile completion reminders

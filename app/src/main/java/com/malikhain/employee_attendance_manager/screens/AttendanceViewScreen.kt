@@ -199,4 +199,13 @@ private fun AttendanceCell(
             }
         }
     }
-} 
+}
+
+// TODO: Allow exporting attendance data to CSV/PDF or printing
+// TODO: Show summary statistics (totals, averages) for attendance
+// TODO: Use color coding for different statuses (present, absent, leave)
+// TODO: Add search by employee name/ID and filter by department
+// TODO: Allow picking a custom date range for attendance view
+// TODO: Enable bulk editing of attendance for multiple employees/days
+// TODO: Highlight frequent absences or attendance anomalies
+// TODO: Allow adding notes to specific attendance records 

@@ -131,3 +131,79 @@ fun EditEmployeeScreen(navController: NavController, id: Int) {
         }
     }
 }
+
+// TODO: Add a button to delete the employee, with confirmation dialog
+// TODO: Allow changing the employee's profile picture
+// TODO: Show a history of changes (audit trail) for the employee's record
+// TODO: Show snackbar/toast on successful update or deletion
+// TODO: Add undo/redo for recent changes before saving
+// TODO: Add confirmation dialog before saving or deleting
+// TODO: Validate fields (email, phone, required fields)
+
+// TODO: Implement delete employee functionality with confirmation dialog
+// TODO: Add profile picture management with upload/change options
+// TODO: Show change history and audit trail for employee records
+// TODO: Display success feedback with snackbar/toast messages
+// TODO: Implement undo/redo functionality for recent changes
+// TODO: Add confirmation dialogs for all destructive actions
+// TODO: Implement comprehensive field validation (email, phone, required fields)
+// TODO: Add employee status management (active, inactive, terminated)
+// TODO: Implement bulk edit capabilities for multiple employees
+// TODO: Add employee deactivation with reason tracking
+// TODO: Show edit history with timestamp and admin details
+// TODO: Implement field-level permissions and access control
+// TODO: Add employee transfer functionality between departments
+// TODO: Show employee performance history and trends
+// TODO: Implement employee promotion and demotion tracking
+// TODO: Add employee contract renewal and termination management
+// TODO: Show employee training and certification updates
+// TODO: Implement employee salary and compensation changes
+// TODO: Add employee work schedule modifications
+// TODO: Show employee role and responsibility changes
+// TODO: Implement employee supervisor/manager reassignment
+// TODO: Add employee location and workspace changes
+// TODO: Show employee equipment and resource allocation updates
+// TODO: Implement employee access level and security changes
+// TODO: Add employee emergency contact updates
+// TODO: Show employee health and safety information changes
+// TODO: Implement employee benefits and insurance updates
+// TODO: Add employee performance review and feedback updates
+// TODO: Show employee goal and objective modifications
+// TODO: Implement employee recognition and reward updates
+// TODO: Add employee disciplinary action tracking
+// TODO: Show employee leave balance and policy changes
+// TODO: Implement employee work environment preference updates
+// TODO: Add employee communication preference changes
+// TODO: Show employee skill and certification updates
+// TODO: Implement employee project and team assignment changes
+// TODO: Add employee retirement and exit planning
+// TODO: Show employee family and dependent information updates
+// TODO: Implement employee legal and compliance updates
+// TODO: Add employee cultural and diversity information changes
+// TODO: Show employee social media and professional profile updates
+// TODO: Implement employee personal development goal changes
+// TODO: Add employee health and wellness information updates
+// TODO: Show employee career development plan modifications
+// TODO: Implement employee feedback and survey response updates
+// TODO: Add employee recognition and achievement history updates
+// TODO: Show employee attendance and punctuality history changes
+// TODO: Implement employee equipment and resource deallocation
+// TODO: Add employee parking and transportation preference updates
+// TODO: Show employee dietary restriction and preference changes
+// TODO: Implement employee language and communication skill updates
+// TODO: Add employee performance history and reference updates
+// TODO: Show employee education and certification detail changes
+// TODO: Implement employee work experience and background updates
+// TODO: Add employee social media and professional profile changes
+// TODO: Show employee personal development goal modifications
+// TODO: Implement employee team and project assignment updates
+// TODO: Add employee work environment preference changes
+// TODO: Show employee feedback and survey response modifications
+// TODO: Implement employee recognition and achievement history updates
+// TODO: Add employee attendance and punctuality history changes
+// TODO: Show employee health and wellness information modifications
+// TODO: Implement employee career development plan updates
+// TODO: Add employee retirement and benefits information changes
+// TODO: Show employee family and dependent information modifications
+// TODO: Implement employee legal and compliance information updates
+// TODO: Add employee security clearance and access level changes

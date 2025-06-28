@@ -87,3 +87,27 @@ fun LoginScreen(navController: NavController) {
         }
     }
 }
+
+// TODO: Add password strength requirements and validation
+// TODO: Implement "Forgot Password" functionality with email recovery
+// TODO: Add "Remember me/Stay logged in" option with secure token storage
+// TODO: Implement biometric authentication (fingerprint/face unlock)
+// TODO: Add rate limiting for failed login attempts to prevent brute force attacks
+// TODO: Add password visibility toggle for better UX
+// TODO: Show loading state during authentication process
+// TODO: Add input validation with real-time feedback (username format, password requirements)
+// TODO: Implement proper password hashing (currently plain text - use bcrypt/Argon2)
+// TODO: Add CAPTCHA for security after multiple failed attempts
+// TODO: Show login attempt history and suspicious activity alerts
+// TODO: Add "Remember username" functionality
+// TODO: Implement proper session management with token expiration
+// TODO: Add logout functionality with session cleanup
+// TODO: Add two-factor authentication (2FA) support
+// TODO: Implement account lockout after multiple failed attempts
+// TODO: Add login analytics and audit logging
+// TODO: Support for multiple admin accounts with role-based access
+// TODO: Add password change functionality
+// TODO: Implement secure password reset flow
+// TODO: Add login notifications for security awareness
+// TODO: Support for SSO (Single Sign-On) integration
+// TODO: Add device management and login from new device notifications

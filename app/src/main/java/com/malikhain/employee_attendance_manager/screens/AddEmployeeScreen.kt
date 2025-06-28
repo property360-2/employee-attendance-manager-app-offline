@@ -114,3 +114,65 @@ fun AddEmployeeScreen(navController: NavController) {
         }
     }
 }
+
+// TODO: Validate email and phone formats, highlight required fields
+// TODO: Allow uploading a profile picture for the employee
+// TODO: Add dropdowns for department and role selection
+// TODO: Show confirmation/snackbar on successful addition
+// TODO: Prompt before discarding unsaved changes
+// TODO: Warn if an employee with the same email/phone already exists
+// TODO: Visually mark required fields
+// TODO: Allow adding custom fields (hire date, notes)
+
+// TODO: Add profile picture upload with camera integration
+// TODO: Implement department/role dropdowns with custom options
+// TODO: Add hire date picker with calendar integration
+// TODO: Implement employee ID auto-generation system
+// TODO: Add duplicate email/phone validation with real-time feedback
+// TODO: Implement form validation with visual indicators and error messages
+// TODO: Add camera integration for profile photo capture
+// TODO: Show confirmation dialog and success feedback
+// TODO: Implement auto-save draft functionality
+// TODO: Add employee templates for quick addition
+// TODO: Show field validation in real-time with helpful messages
+// TODO: Add bulk import functionality from CSV/Excel
+// TODO: Implement employee ID auto-generation with prefix/suffix options
+// TODO: Add custom fields support (emergency contacts, skills, certifications)
+// TODO: Add multi-step form wizard for better UX
+// TODO: Implement employee onboarding workflow
+// TODO: Add employee status selection (active, inactive, probation)
+// TODO: Show employee photo preview and editing options
+// TODO: Add employee category/tag system
+// TODO: Implement employee referral tracking
+// TODO: Add employee contract type selection
+// TODO: Show employee work location and remote work options
+// TODO: Add employee supervisor/manager assignment
+// TODO: Implement employee salary information (optional)
+// TODO: Add employee work schedule preferences
+// TODO: Show employee emergency contact information
+// TODO: Add employee skill assessment and rating
+// TODO: Implement employee training requirements
+// TODO: Add employee performance goals and objectives
+// TODO: Show employee communication preferences
+// TODO: Add employee health and safety information
+// TODO: Implement employee equipment and resource allocation
+// TODO: Add employee parking and transportation preferences
+// TODO: Show employee dietary restrictions and preferences
+// TODO: Add employee language and communication skills
+// TODO: Implement employee cultural and diversity information
+// TODO: Add employee performance history and references
+// TODO: Show employee education and certification details
+// TODO: Add employee work experience and background
+// TODO: Implement employee social media and professional profiles
+// TODO: Add employee personal development goals
+// TODO: Show employee team and project assignments
+// TODO: Add employee work environment preferences
+// TODO: Implement employee feedback and survey responses
+// TODO: Add employee recognition and achievement history
+// TODO: Show employee attendance and punctuality history
+// TODO: Add employee health and wellness information
+// TODO: Implement employee career development plans
+// TODO: Add employee retirement and benefits information
+// TODO: Show employee family and dependent information
+// TODO: Add employee legal and compliance information
+// TODO: Implement employee security clearance and access levels
