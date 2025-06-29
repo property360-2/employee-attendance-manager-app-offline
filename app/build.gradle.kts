@@ -72,8 +72,10 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.51")
     kapt("com.google.dagger:hilt-compiler:2.51")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+//asdas
 
     // Kotlin Coroutines
+    //
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     // Testing
@@ -91,5 +93,20 @@ dependencies {
 
     // ThreeTenBP
     implementation("org.threeten:threetenbp:1.6.7:no-tzdb")
+
+    // Security - Password Hashing
+    implementation("org.mindrot:jbcrypt:0.4")
+
+    // Biometric Authentication
+    implementation("androidx.biometric:biometric:1.1.0")
+
+    // DataStore for secure preferences
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    // WorkManager for background tasks
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // Room with encryption
+    implementation("net.zetetic:android-database-sqlcipher:4.5.4")
 
 }

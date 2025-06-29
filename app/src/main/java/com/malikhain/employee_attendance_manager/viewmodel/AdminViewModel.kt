@@ -22,17 +22,18 @@ class AdminViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-
-    fun login(username: String, password: String, onResult: (Boolean) -> Unit) {
+    fun getAdminByUsername(username: String, onResult: (Admin?) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            val admin = dao.login(username, password)
-            onResult(admin != null)
+            val admin = dao.getAdminByUsername(username)
+            onResult(admin)
         }
     }
 
-    fun hasAdmin(onResult: (Boolean) -> Unit) {
+    fun getAllAdmins(onResult: (List<Admin>) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            onResult(dao.hasAdmin() > 0)
+            dao.getAllAdmins().collect { admins ->
+                onResult(admins)
+            }
         }
     }
 }

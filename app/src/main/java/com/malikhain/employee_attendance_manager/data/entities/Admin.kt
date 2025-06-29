@@ -8,6 +8,11 @@ data class Admin(
     @PrimaryKey(autoGenerate = true) val adminId: Int = 0,
     val username: String,
     val password: String,
+    val email: String? = null,
+    val failedLoginAttempts: Int = 0,
+    val isLocked: Boolean = false,
+    val lockoutUntil: Long = 0,
+    val lastLoginTime: Long = 0,
     val createdAt: Long = System.currentTimeMillis()
 )
 

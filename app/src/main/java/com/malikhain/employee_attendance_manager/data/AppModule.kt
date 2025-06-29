@@ -28,4 +28,9 @@ object AppModule {
 
     @Provides
     fun provideAttendanceDao(db: AppDatabase): AttendanceDao = db.attendanceDao()
+
+    @Provides
+    @Singleton
+    fun providePreferencesManager(@ApplicationContext context: Context): PreferencesManager =
+        PreferencesManager(context)
 } 

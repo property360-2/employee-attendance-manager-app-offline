@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.malikhain.employee_attendance_manager.data.dao.AdminDao
 import com.malikhain.employee_attendance_manager.data.dao.EmployeeDao
 import com.malikhain.employee_attendance_manager.data.dao.AttendanceDao
@@ -13,7 +15,7 @@ import com.malikhain.employee_attendance_manager.data.entities.Attendance
 
 @Database(
     entities = [Admin::class, Employee::class, Attendance::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -32,9 +34,22 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "attendance_db"
-                ).build()
+                )
+                .addMigrations(MIGRATION_2_3)
+                .build()
                 INSTANCE = instance
                 instance
+            }
+        }
+
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Add new columns to admins table
+                database.execSQL("ALTER TABLE admins ADD COLUMN email TEXT")
+                database.execSQL("ALTER TABLE admins ADD COLUMN failedLoginAttempts INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE admins ADD COLUMN isLocked INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE admins ADD COLUMN lockoutUntil INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE admins ADD COLUMN lastLoginTime INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,7 +24,8 @@ data class BottomNavItem(
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         BottomNavItem("Home", Icons.Default.Home, Screen.Home.route),
-        BottomNavItem("Attendance", Icons.Default.List, "attendanceView")
+        BottomNavItem("Attendance", Icons.Default.List, "attendanceView"),
+        BottomNavItem("Settings", Icons.Default.Settings, Screen.Settings.route)
     )
 
     NavigationBar {

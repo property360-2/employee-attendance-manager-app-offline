@@ -20,43 +20,161 @@ import com.malikhain.employee_attendance_manager.viewmodel.EmployeeViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EmployeeDetailsScreen(navController: NavController, id: Int) {
+fun EmployeeDetailsScreen(
+    navController: NavController,
+    employeeId: Int
+) {
     val viewModel: EmployeeViewModel = hiltViewModel()
-    val employees by viewModel.employees.collectAsState()
-    val employee = employees.find { it.id == id }
+    val employee by viewModel.getEmployee(employeeId).collectAsState()
+    val attendance by viewModel.getEmployeeAttendance(employeeId).collectAsState()
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(Unit) {
+        viewModel.loadEmployeeAttendance(employeeId)
+    }
 
     if (employee == null) {
         // Show error UI
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Employee not found")
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = { navController.popBackStack() }) {
+                Text("Go Back")
+            }
+        }
         return
     }
-
-    var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Info", "Attendance")
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(employee.name) },
+                title = { Text(employee!!.name) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { navController.navigate("edit_employee/${employeeId}") }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
+                    IconButton(onClick = { showDeleteDialog = true }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    }
+                }
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            TabRow(selectedTabIndex = selectedTab) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(title) }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
+        ) {
+            // Employee Info Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Employee Information",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
                     )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    InfoRow("Name", employee!!.name)
+                    InfoRow("Job Title", employee!!.jobTitle)
+                    employee!!.email?.let { InfoRow("Email", it) }
+                    employee!!.phone?.let { InfoRow("Phone", it) }
+                    employee!!.address?.let { InfoRow("Address", it) }
+                    InfoRow("Created Date", SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(employee!!.createdAt)))
                 }
             }
-            when (selectedTab) {
-                0 -> InfoTab(employee = employee, navController = navController)
-                1 -> AttendanceTab(employeeId = employee.id)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Attendance Section
+            Text(
+                text = "Attendance History",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            if (attendance.isEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "No attendance records found",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(attendance) { attendanceRecord ->
+                        AttendanceCard(attendanceRecord)
+                    }
+                }
             }
+        }
+        
+        // Delete Confirmation Dialog
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Delete Employee") },
+                text = { 
+                    Text(
+                        "Are you sure you want to delete ${employee!!.name}? This action cannot be undone and will also delete all attendance records.",
+                        textAlign = TextAlign.Center
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteEmployee(employee!!)
+                            showDeleteDialog = false
+                            navController.popBackStack()
+                        }
+                    ) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }
@@ -324,5 +442,66 @@ private fun isToday(timestamp: Long): Boolean {
 // TODO: Show employee career development plan progress
 // TODO: Implement employee retirement and benefits information management
 // TODO: Add employee family and dependent information management
-// TODO: Show employee legal and compliance information management
-// TODO: Implement employee security clearance and access level management
+
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+private fun AttendanceCard(attendance: Attendance) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(attendance.date)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(attendance.date)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            val statusColor = when (attendance.status) {
+                "Present" -> MaterialTheme.colorScheme.primary
+                "Absent" -> MaterialTheme.colorScheme.error
+                "Leave" -> MaterialTheme.colorScheme.tertiary
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            }
+            
+            Text(
+                text = attendance.status,
+                style = MaterialTheme.typography.bodyMedium,
+                color = statusColor
+            )
+        }
+    }
+}

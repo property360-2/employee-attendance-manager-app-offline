@@ -5,6 +5,7 @@ sealed class Screen(val route: String) {
     object Register : Screen("register")
     object Home : Screen("home")
     object AttendanceView : Screen("attendanceView")
+    object Settings : Screen("settings")
     object AddEmployee : Screen("add")
     data class EditEmployee(val id: Int) : Screen("edit/{id}") {
         companion object { fun createRoute(id: Int) = "edit/$id" }

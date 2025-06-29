@@ -15,6 +15,12 @@ interface AttendanceDao {
     @Delete
     suspend fun deleteAttendance(attendance: Attendance)
 
+    @Query("DELETE FROM attendance")
+    suspend fun deleteAllAttendance()
+
+    @Query("DELETE FROM attendance WHERE employeeId = :employeeId")
+    suspend fun deleteAttendanceByEmployeeId(employeeId: Int)
+
     @Query("SELECT * FROM attendance WHERE employeeId = :employeeId ORDER BY date DESC")
     fun getAttendanceForEmployee(employeeId: Int): Flow<List<Attendance>>
 
@@ -26,4 +32,10 @@ interface AttendanceDao {
 
     @Query("SELECT * FROM attendance WHERE date = :date AND employeeId = :employeeId LIMIT 1")
     suspend fun getAttendanceByDate(employeeId: Int, date: Long): Attendance?
+
+    @Query("SELECT * FROM attendance ORDER BY date DESC")
+    suspend fun getAllAttendance(): List<Attendance>
+
+    @Query("SELECT * FROM attendance WHERE employeeId = :employeeId ORDER BY date DESC")
+    suspend fun getAttendanceByEmployeeId(employeeId: Int): List<Attendance>
 } 

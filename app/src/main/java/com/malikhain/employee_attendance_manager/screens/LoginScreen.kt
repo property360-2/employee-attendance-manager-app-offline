@@ -6,15 +6,22 @@ import androidx.compose.runtime.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.malikhain.employee_attendance_manager.viewmodel.AuthViewModel
+import com.malikhain.employee_attendance_manager.viewmodel.LoginState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import com.malikhain.employee_attendance_manager.navigation.BottomNavigationBar
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.ui.text.style.TextAlign
+import kotlinx.coroutines.delay
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,23 +29,34 @@ fun LoginScreen(navController: NavController) {
     val viewModel: AuthViewModel = hiltViewModel()
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
+    var passwordVisible by remember { mutableStateOf(false) }
+    
     val loginState by viewModel.loginState.collectAsState()
 
     LaunchedEffect(loginState) {
-        if (loginState == true) {
-            navController.navigate("home") {
-                popUpTo("login") { inclusive = true }
+        when (loginState) {
+            is LoginState.Success -> {
+                navController.navigate("home") {
+                    popUpTo("login") { inclusive = true }
+                }
+                viewModel.resetLoginState()
             }
-        } else if (loginState == false) {
-            error = "Invalid username or password"
+            is LoginState.Error -> {
+                // Error is handled in the UI
+            }
+            is LoginState.AccountLocked -> {
+                // Account locked state is handled in the UI
+            }
+            else -> { /* Other states handled in UI */ }
         }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Admin Login") })
-        },
+            TopAppBar(
+                title = { Text("Admin Login") }
+            )
+        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -48,66 +66,148 @@ fun LoginScreen(navController: NavController) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Admin Login", style = MaterialTheme.typography.titleLarge)
+            LoginContent(
+                username = username,
+                onUsernameChange = { username = it },
+                password = password,
+                onPasswordChange = { password = it },
+                passwordVisible = passwordVisible,
+                onPasswordVisibilityChange = { passwordVisible = it },
+                onLogin = { viewModel.login(username, password) },
+                onRegister = { navController.navigate("register") },
+                loginState = loginState
+            )
+        }
+    }
+}
+
+@Composable
+private fun LoginContent(
+    username: String,
+    onUsernameChange: (String) -> Unit,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    passwordVisible: Boolean,
+    onPasswordVisibilityChange: (Boolean) -> Unit,
+    onLogin: () -> Unit,
+    onRegister: () -> Unit,
+    loginState: LoginState
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "Welcome Back",
+                style = MaterialTheme.typography.headlineMedium,
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                "Sign in to your admin account",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
             Spacer(modifier = Modifier.height(24.dp))
+            
             OutlinedTextField(
                 value = username,
-                onValueChange = { username = it },
+                onValueChange = onUsernameChange,
                 label = { Text("Username") },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Username") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = loginState !is LoginState.Loading
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = onPasswordChange,
                 label = { Text("Password") },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
+                trailingIcon = {
+                    IconButton(onClick = { onPasswordVisibilityChange(!passwordVisible) }) {
+                        Icon(
+                            if (passwordVisible) Icons.Default.Close else Icons.Default.Check,
+                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                        )
+                    }
+                },
                 singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                enabled = loginState !is LoginState.Loading
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = {
-                if (username.isBlank() || password.isBlank()) {
-                    error = "Please enter both username and password"
-                } else {
-                    error = null
-                    viewModel.login(username, password)
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Button(
+                onClick = onLogin,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = loginState !is LoginState.Loading && username.isNotBlank() && password.isNotBlank()
+            ) {
+                if (loginState is LoginState.Loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                 }
-            }, modifier = Modifier.fillMaxWidth()) {
-                Text("Login")
+                Text("Sign In")
             }
-            TextButton(onClick = { navController.navigate("register") }) {
-                Text("Register")
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            TextButton(onClick = onRegister) {
+                Text("Don't have an account? Register")
             }
-            error?.let {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(it, color = MaterialTheme.colorScheme.error)
+            
+            // Error and status messages
+            when (loginState) {
+                is LoginState.Error -> {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        loginState.message,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                is LoginState.AccountLocked -> {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    val minutes = TimeUnit.MILLISECONDS.toMinutes(loginState.remainingTime)
+                    val seconds = TimeUnit.MILLISECONDS.toSeconds(loginState.remainingTime) % 60
+                    Text(
+                        "Account locked. Try again in ${minutes}m ${seconds}s",
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                else -> { /* No message */ }
             }
         }
     }
 }
 
-// TODO: Add password strength requirements and validation
-// TODO: Implement "Forgot Password" functionality with email recovery
 // TODO: Add "Remember me/Stay logged in" option with secure token storage
 // TODO: Implement biometric authentication (fingerprint/face unlock)
-// TODO: Add rate limiting for failed login attempts to prevent brute force attacks
-// TODO: Add password visibility toggle for better UX
-// TODO: Show loading state during authentication process
-// TODO: Add input validation with real-time feedback (username format, password requirements)
-// TODO: Implement proper password hashing (currently plain text - use bcrypt/Argon2)
 // TODO: Add CAPTCHA for security after multiple failed attempts
 // TODO: Show login attempt history and suspicious activity alerts
 // TODO: Add "Remember username" functionality
-// TODO: Implement proper session management with token expiration
-// TODO: Add logout functionality with session cleanup
 // TODO: Add two-factor authentication (2FA) support
-// TODO: Implement account lockout after multiple failed attempts
 // TODO: Add login analytics and audit logging
 // TODO: Support for multiple admin accounts with role-based access
-// TODO: Add password change functionality
-// TODO: Implement secure password reset flow
 // TODO: Add login notifications for security awareness
 // TODO: Support for SSO (Single Sign-On) integration
 // TODO: Add device management and login from new device notifications

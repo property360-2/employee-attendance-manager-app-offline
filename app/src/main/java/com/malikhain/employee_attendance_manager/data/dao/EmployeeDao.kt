@@ -15,6 +15,12 @@ interface EmployeeDao {
     @Delete
     suspend fun deleteEmployee(employee: Employee)
 
+    @Query("DELETE FROM employees")
+    suspend fun deleteAllEmployees()
+
+    @Query("SELECT * FROM employees WHERE name LIKE '%' || :query || '%' OR jobTitle LIKE '%' || :query || '%'")
+    suspend fun searchEmployees(query: String): List<Employee>
+
     @Query("SELECT * FROM employees ORDER BY createdAt DESC")
     fun getAllEmployees(): Flow<List<Employee>>
 

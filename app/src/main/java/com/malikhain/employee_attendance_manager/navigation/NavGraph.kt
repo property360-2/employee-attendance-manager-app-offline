@@ -10,14 +10,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun AppNavGraph(navController: NavHostController = rememberNavController()) {
-    NavHost(navController = navController, startDestination = Screen.Login.route) {
+    NavHost(navController = navController, startDestination = "onboarding") {
+        composable("onboarding") { OnboardingScreen(navController) }
         composable(Screen.Login.route) { LoginScreen(navController) }
         composable(Screen.Register.route) { RegisterScreen(navController) }
         composable(Screen.Home.route) {
-            val viewModel = hiltViewModel<com.malikhain.employee_attendance_manager.viewmodel.EmployeeViewModel>()
-            HomeScreen(navController, viewModel)
+            HomeScreen(navController)
         }
         composable(Screen.AttendanceView.route) { AttendanceViewScreen(navController) }
+        composable(Screen.Settings.route) { SettingsScreen(navController) }
         composable(Screen.AddEmployee.route) { AddEmployeeScreen(navController) }
         composable("edit/{id}") { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
@@ -26,6 +27,15 @@ fun AppNavGraph(navController: NavHostController = rememberNavController()) {
         composable("details/{id}") { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
             EmployeeDetailsScreen(navController, id)
+        }
+        composable("change_password") {
+            ChangePasswordScreen(navController)
+        }
+        composable("analytics") {
+            AnalyticsScreen(navController)
+        }
+        composable("settings") {
+            SettingsScreen(navController)
         }
     }
 }
