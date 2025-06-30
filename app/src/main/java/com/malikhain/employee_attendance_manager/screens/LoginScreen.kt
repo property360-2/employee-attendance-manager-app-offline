@@ -13,14 +13,28 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,8 +44,25 @@ fun LoginScreen(navController: NavController) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var rememberMe by remember { mutableStateOf(false) }
+    var rememberUsername by remember { mutableStateOf(false) }
     
     val loginState by viewModel.loginState.collectAsState()
+    val biometricAvailable by viewModel.biometricAvailable.collectAsState()
+    val savedUsername by viewModel.savedUsername.collectAsState()
+    val rememberUsernameSetting by viewModel.rememberUsername.collectAsState()
+    
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val coroutineScope = rememberCoroutineScope()
+
+    // Load saved username if available
+    LaunchedEffect(savedUsername, rememberUsernameSetting) {
+        if (rememberUsernameSetting && savedUsername != null) {
+            username = savedUsername!!
+            rememberUsername = true
+        }
+    }
 
     LaunchedEffect(loginState) {
         when (loginState) {
@@ -40,6 +71,19 @@ fun LoginScreen(navController: NavController) {
                     popUpTo("login") { inclusive = true }
                 }
                 viewModel.resetLoginState()
+            }
+            is LoginState.BiometricRequired -> {
+                // Handle biometric authentication
+                coroutineScope.launch {
+                    val success = com.malikhain.employee_attendance_manager.utils.BiometricUtils.authenticateBiometric(
+                        context as androidx.fragment.app.FragmentActivity
+                    )
+                    if (success) {
+                        viewModel.handleBiometricSuccess()
+                    } else {
+                        viewModel.resetLoginState()
+                    }
+                }
             }
             is LoginState.Error -> {
                 // Error is handled in the UI
@@ -73,9 +117,18 @@ fun LoginScreen(navController: NavController) {
                 onPasswordChange = { password = it },
                 passwordVisible = passwordVisible,
                 onPasswordVisibilityChange = { passwordVisible = it },
-                onLogin = { viewModel.login(username, password) },
+                rememberMe = rememberMe,
+                onRememberMeChange = { rememberMe = it },
+                rememberUsername = rememberUsername,
+                onRememberUsernameChange = { 
+                    rememberUsername = it
+                    viewModel.setRememberUsername(it)
+                },
+                onLogin = { viewModel.login(username, password, rememberMe) },
+                onBiometricLogin = { viewModel.loginWithBiometric() },
                 onRegister = { navController.navigate("register") },
-                loginState = loginState
+                loginState = loginState,
+                biometricAvailable = biometricAvailable
             )
         }
     }
@@ -89,9 +142,15 @@ private fun LoginContent(
     onPasswordChange: (String) -> Unit,
     passwordVisible: Boolean,
     onPasswordVisibilityChange: (Boolean) -> Unit,
+    rememberMe: Boolean,
+    onRememberMeChange: (Boolean) -> Unit,
+    rememberUsername: Boolean,
+    onRememberUsernameChange: (Boolean) -> Unit,
     onLogin: () -> Unit,
+    onBiometricLogin: () -> Unit,
     onRegister: () -> Unit,
-    loginState: LoginState
+    loginState: LoginState,
+    biometricAvailable: Boolean
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -138,7 +197,7 @@ private fun LoginContent(
                 trailingIcon = {
                     IconButton(onClick = { onPasswordVisibilityChange(!passwordVisible) }) {
                         Icon(
-                            if (passwordVisible) Icons.Default.Close else Icons.Default.Check,
+                            if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = if (passwordVisible) "Hide password" else "Show password"
                         )
                     }
@@ -149,8 +208,47 @@ private fun LoginContent(
                 enabled = loginState !is LoginState.Loading
             )
             
+            // Password strength indicator
+            if (password.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                PasswordStrengthIndicator(password = password)
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Remember options
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = rememberMe,
+                        onCheckedChange = onRememberMeChange,
+                        enabled = loginState !is LoginState.Loading
+                    )
+                    Text(
+                        "Remember me",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = rememberUsername,
+                        onCheckedChange = onRememberUsernameChange,
+                        enabled = loginState !is LoginState.Loading
+                    )
+                    Text(
+                        "Remember username",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+            
             Spacer(modifier = Modifier.height(24.dp))
             
+            // Login button
             Button(
                 onClick = onLogin,
                 modifier = Modifier.fillMaxWidth(),
@@ -164,6 +262,24 @@ private fun LoginContent(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Text("Sign In")
+            }
+            
+            // Biometric login button
+            if (biometricAvailable) {
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = onBiometricLogin,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = loginState !is LoginState.Loading
+                ) {
+                    Icon(
+                        Icons.Default.Lock,
+                        contentDescription = "Biometric",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Sign in with Biometric")
+                }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -198,6 +314,69 @@ private fun LoginContent(
             }
         }
     }
+}
+
+@Composable
+private fun PasswordStrengthIndicator(password: String) {
+    val strength = calculatePasswordStrength(password)
+    val strengthInfo = when (strength) {
+        0 -> Pair(Color.Gray, "Very Weak")
+        1 -> Pair(Color.Red, "Weak")
+        2 -> Pair(Color(0xFFFF9800), "Fair")
+        3 -> Pair(Color.Yellow, "Good")
+        4 -> Pair(Color.Green, "Strong")
+        else -> Pair(Color.Green, "Very Strong")
+    }
+    
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Password Strength:",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                strengthInfo.second,
+                style = MaterialTheme.typography.bodySmall,
+                color = strengthInfo.first
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            repeat(5) { index ->
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(
+                            if (index < strength) strengthInfo.first else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                )
+            }
+        }
+    }
+}
+
+private fun calculatePasswordStrength(password: String): Int {
+    var strength = 0
+    
+    if (password.length >= 8) strength++
+    if (password.any { it.isUpperCase() }) strength++
+    if (password.any { it.isLowerCase() }) strength++
+    if (password.any { it.isDigit() }) strength++
+    if (password.any { !it.isLetterOrDigit() }) strength++
+    
+    return strength
 }
 
 // TODO: Add "Remember me/Stay logged in" option with secure token storage

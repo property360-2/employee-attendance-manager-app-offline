@@ -1,17 +1,22 @@
 package com.malikhain.employee_attendance_manager.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.malikhain.employee_attendance_manager.data.dao.AdminDao
 import com.malikhain.employee_attendance_manager.data.entities.Admin
+import com.malikhain.employee_attendance_manager.data.PreferencesManager
 import com.malikhain.employee_attendance_manager.utils.SecurityUtils
 import com.malikhain.employee_attendance_manager.utils.PasswordValidationResult
 import com.malikhain.employee_attendance_manager.utils.UsernameValidationResult
 import com.malikhain.employee_attendance_manager.utils.EmailValidationResult
+import com.malikhain.employee_attendance_manager.utils.BiometricUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 sealed class RegistrationState {
@@ -27,17 +32,72 @@ sealed class LoginState {
     object Success : LoginState()
     data class Error(val message: String) : LoginState()
     data class AccountLocked(val remainingTime: Long) : LoginState()
+    object BiometricRequired : LoginState()
 }
 
 @HiltViewModel
-class AuthViewModel @Inject constructor(private val adminDao: AdminDao) : ViewModel() {
+class AuthViewModel @Inject constructor(
+    private val adminDao: AdminDao,
+    private val preferencesManager: PreferencesManager,
+    @ApplicationContext private val context: Context
+) : ViewModel() {
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState
 
     private val _registrationState = MutableStateFlow<RegistrationState>(RegistrationState.Idle)
     val registrationState: StateFlow<RegistrationState> = _registrationState
 
-    fun login(username: String, password: String) {
+    private val _biometricAvailable = MutableStateFlow(false)
+    val biometricAvailable: StateFlow<Boolean> = _biometricAvailable
+
+    private val _rememberUsername = MutableStateFlow(false)
+    val rememberUsername: StateFlow<Boolean> = _rememberUsername
+
+    private val _savedUsername = MutableStateFlow<String?>(null)
+    val savedUsername: StateFlow<String?> = _savedUsername
+
+    init {
+        checkBiometricAvailability()
+        loadRememberUsernameSettings()
+        checkSessionToken()
+    }
+
+    private fun checkBiometricAvailability() {
+        _biometricAvailable.value = BiometricUtils.isBiometricAvailable(context)
+    }
+
+    private fun loadRememberUsernameSettings() {
+        viewModelScope.launch {
+            preferencesManager.shouldRememberUsername.collect { remember ->
+                _rememberUsername.value = remember
+            }
+        }
+        viewModelScope.launch {
+            preferencesManager.savedUsername.collect { username ->
+                _savedUsername.value = username
+            }
+        }
+    }
+
+    private fun checkSessionToken() {
+        viewModelScope.launch {
+            preferencesManager.sessionToken.collect { token ->
+                if (token != null) {
+                    preferencesManager.sessionExpiry.collect { expiry ->
+                        if (System.currentTimeMillis() < expiry) {
+                            // Valid session exists, auto-login
+                            _loginState.value = LoginState.Success
+                        } else {
+                            // Session expired, clear it
+                            preferencesManager.setSessionToken(null)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun login(username: String, password: String, rememberMe: Boolean = false) {
         if (username.isBlank() || password.isBlank()) {
             _loginState.value = LoginState.Error("Please enter both username and password")
             return
@@ -65,6 +125,22 @@ class AuthViewModel @Inject constructor(private val adminDao: AdminDao) : ViewMo
                 if (SecurityUtils.verifyPassword(password, admin.password)) {
                     // Successful login
                     adminDao.updateSuccessfulLogin(admin.adminId, System.currentTimeMillis())
+                    
+                    // Handle remember me
+                    if (rememberMe) {
+                        val sessionToken = UUID.randomUUID().toString()
+                        val expiryTime = System.currentTimeMillis() + (30 * 24 * 60 * 60 * 1000) // 30 days
+                        preferencesManager.setSessionToken(sessionToken)
+                        preferencesManager.setSessionExpiry(expiryTime)
+                    }
+                    
+                    // Handle remember username
+                    if (_rememberUsername.value) {
+                        preferencesManager.setSavedUsername(username)
+                    } else {
+                        preferencesManager.setSavedUsername(null)
+                    }
+                    
                     _loginState.value = LoginState.Success
                 } else {
                     // Failed login
@@ -84,6 +160,49 @@ class AuthViewModel @Inject constructor(private val adminDao: AdminDao) : ViewMo
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error("Login failed. Please try again.")
             }
+        }
+    }
+
+    fun loginWithBiometric() {
+        _loginState.value = LoginState.BiometricRequired
+    }
+
+    fun handleBiometricSuccess() {
+        viewModelScope.launch {
+            // Check if we have a saved session
+            preferencesManager.sessionToken.collect { token ->
+                if (token != null) {
+                    preferencesManager.sessionExpiry.collect { expiry ->
+                        if (System.currentTimeMillis() < expiry) {
+                            _loginState.value = LoginState.Success
+                        } else {
+                            preferencesManager.setSessionToken(null)
+                            _loginState.value = LoginState.Error("Session expired. Please login with credentials.")
+                        }
+                    }
+                } else {
+                    _loginState.value = LoginState.Error("No saved session found. Please login with credentials.")
+                }
+            }
+        }
+    }
+
+    fun setRememberUsername(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.setRememberUsername(enabled)
+            _rememberUsername.value = enabled
+            if (!enabled) {
+                preferencesManager.setSavedUsername(null)
+                _savedUsername.value = null
+            }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            preferencesManager.setSessionToken(null)
+            preferencesManager.setSessionExpiry(0L)
+            _loginState.value = LoginState.Idle
         }
     }
 

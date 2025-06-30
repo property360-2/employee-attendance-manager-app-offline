@@ -109,4 +109,7 @@ dependencies {
     // Room with encryption
     implementation("net.zetetic:android-database-sqlcipher:4.5.4")
 
+    // Material Icons Extended
+    implementation("androidx.compose.material:material-icons-extended:1.6.0")
+
 }

@@ -14,15 +14,25 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.style.TextAlign
 import com.malikhain.employee_attendance_manager.viewmodel.RegistrationState
 import com.malikhain.employee_attendance_manager.utils.SecurityUtils
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.font.FontWeight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +44,8 @@ fun RegisterScreen(navController: NavController) {
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var acceptTerms by remember { mutableStateOf(false) }
+    var acceptPrivacyPolicy by remember { mutableStateOf(false) }
     
     val registrationState by viewModel.registrationState.collectAsState()
 
@@ -137,7 +149,7 @@ fun RegisterScreen(navController: NavController) {
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                if (passwordVisible) Icons.Default.Close else Icons.Default.Check,
+                                if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = if (passwordVisible) "Hide password" else "Show password"
                             )
                         }
@@ -154,6 +166,13 @@ fun RegisterScreen(navController: NavController) {
                 )
             }
             
+            // Password strength indicator
+            if (password.isNotEmpty()) {
+                item {
+                    PasswordStrengthIndicator(password = password)
+                }
+            }
+            
             item {
                 // Confirm Password field
                 OutlinedTextField(
@@ -164,7 +183,7 @@ fun RegisterScreen(navController: NavController) {
                     trailingIcon = {
                         IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                             Icon(
-                                if (confirmPasswordVisible) Icons.Default.Close else Icons.Default.Check,
+                                if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password"
                             )
                         }
@@ -188,6 +207,62 @@ fun RegisterScreen(navController: NavController) {
                 }
             }
             
+            // Terms and Conditions
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = acceptTerms,
+                                onCheckedChange = { acceptTerms = it }
+                            )
+                            Text(
+                                buildAnnotatedString {
+                                    append("I accept the ")
+                                    withStyle(style = androidx.compose.ui.text.SpanStyle(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )) {
+                                        append("Terms and Conditions")
+                                    }
+                                },
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = acceptPrivacyPolicy,
+                                onCheckedChange = { acceptPrivacyPolicy = it }
+                            )
+                            Text(
+                                buildAnnotatedString {
+                                    append("I accept the ")
+                                    withStyle(style = androidx.compose.ui.text.SpanStyle(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )) {
+                                        append("Privacy Policy")
+                                    }
+                                },
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            }
+            
             item {
                 Button(
                     onClick = { viewModel.register(username, password, email.takeIf { it.isNotBlank() }) },
@@ -198,8 +273,17 @@ fun RegisterScreen(navController: NavController) {
                              usernameValidation is com.malikhain.employee_attendance_manager.utils.UsernameValidationResult.Success &&
                              (email.isBlank() || emailValidation is com.malikhain.employee_attendance_manager.utils.EmailValidationResult.Success) &&
                              passwordValidation is com.malikhain.employee_attendance_manager.utils.PasswordValidationResult.Success &&
-                             passwordsMatch
+                             passwordsMatch &&
+                             acceptTerms &&
+                             acceptPrivacyPolicy
                 ) {
+                    if (registrationState is RegistrationState.Loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
                     Text("Create Account")
                 }
             }
@@ -224,6 +308,77 @@ fun RegisterScreen(navController: NavController) {
             }
         }
     }
+}
+
+@Composable
+private fun PasswordStrengthIndicator(password: String) {
+    val strength = calculatePasswordStrength(password)
+    val strengthInfo = when (strength) {
+        0 -> Pair(Color.Gray, "Very Weak")
+        1 -> Pair(Color.Red, "Weak")
+        2 -> Pair(Color(0xFFFF9800), "Fair")
+        3 -> Pair(Color.Yellow, "Good")
+        4 -> Pair(Color.Green, "Strong")
+        else -> Pair(Color.Green, "Very Strong")
+    }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Password Strength:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    strengthInfo.second,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = strengthInfo.first,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                repeat(5) { index ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(
+                                if (index < strength) strengthInfo.first else MaterialTheme.colorScheme.surface
+                            )
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun calculatePasswordStrength(password: String): Int {
+    var strength = 0
+    
+    if (password.length >= 8) strength++
+    if (password.any { it.isUpperCase() }) strength++
+    if (password.any { it.isLowerCase() }) strength++
+    if (password.any { it.isDigit() }) strength++
+    if (password.any { !it.isLetterOrDigit() }) strength++
+    
+    return strength
 }
 
 @Composable
