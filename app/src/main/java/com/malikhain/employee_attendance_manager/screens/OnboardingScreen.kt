@@ -17,10 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.malikhain.employee_attendance_manager.data.PreferencesManager
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun OnboardingScreen(navController: NavController) {
+fun OnboardingScreen(navController: NavController, preferencesManager: PreferencesManager) {
     val pages = listOf(
         OnboardingPage(
             title = "Welcome to Employee Attendance Manager",
@@ -46,6 +48,7 @@ fun OnboardingScreen(navController: NavController) {
     
     val pagerState = rememberPagerState(pageCount = { pages.size })
     var currentPage by remember { mutableStateOf(0) }
+    val coroutineScope = rememberCoroutineScope()
     
     LaunchedEffect(pagerState.currentPage) {
         currentPage = pagerState.currentPage
@@ -63,7 +66,12 @@ fun OnboardingScreen(navController: NavController) {
             horizontalArrangement = Arrangement.End
         ) {
             TextButton(
-                onClick = { navController.navigate("register") }
+                onClick = { 
+                    coroutineScope.launch {
+                        preferencesManager.setOnboardingCompleted(true)
+                    }
+                    navController.navigate("register")
+                }
             ) {
                 Text("Skip")
             }
@@ -129,6 +137,9 @@ fun OnboardingScreen(navController: NavController) {
                     if (currentPage < pages.size - 1) {
                         // Navigate to next page
                     } else {
+                        coroutineScope.launch {
+                            preferencesManager.setOnboardingCompleted(true)
+                        }
                         navController.navigate("register")
                     }
                 }

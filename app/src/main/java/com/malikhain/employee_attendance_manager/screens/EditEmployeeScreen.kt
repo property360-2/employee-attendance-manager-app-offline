@@ -10,10 +10,12 @@ import com.malikhain.employee_attendance_manager.data.entities.Employee
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ArrowBack
 import com.malikhain.employee_attendance_manager.navigation.BottomNavigationBar
 import androidx.compose.runtime.getValue
 
@@ -46,7 +48,14 @@ fun EditEmployeeScreen(navController: NavController, id: Int) {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Edit ${employee.name}") })
+            TopAppBar(
+                title = { Text("Edit ${employee.name}") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
         },
     ) { padding ->
         Column(
@@ -59,74 +68,122 @@ fun EditEmployeeScreen(navController: NavController, id: Int) {
         ) {
             Text("Edit Employee", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(24.dp))
+            
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
-                label = { Text("Name") },
+                onValueChange = { 
+                    name = it
+                    if (error != null) error = null
+                },
+                label = { Text("Name *") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = error != null && name.isBlank()
             )
+            
             Spacer(modifier = Modifier.height(12.dp))
+            
             OutlinedTextField(
                 value = jobTitle,
-                onValueChange = { jobTitle = it },
-                label = { Text("Job Title") },
+                onValueChange = { 
+                    jobTitle = it
+                    if (error != null) error = null
+                },
+                label = { Text("Job Title *") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = error != null && jobTitle.isBlank()
             )
+            
             Spacer(modifier = Modifier.height(12.dp))
+            
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
+                onValueChange = { 
+                    email = it
+                    if (error != null) error = null
+                },
+                label = { Text("Email (Optional)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+            
             Spacer(modifier = Modifier.height(12.dp))
+            
             OutlinedTextField(
                 value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Phone") },
+                onValueChange = { 
+                    phone = it
+                    if (error != null) error = null
+                },
+                label = { Text("Phone (Optional)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+            
             Spacer(modifier = Modifier.height(12.dp))
+            
             OutlinedTextField(
                 value = address,
-                onValueChange = { address = it },
-                label = { Text("Address") },
+                onValueChange = { 
+                    address = it
+                    if (error != null) error = null
+                },
+                label = { Text("Address (Optional)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+            
             Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Button(onClick = { navController.popBackStack() }, modifier = Modifier.weight(1f)) {
+            
+            error?.let {
+                Text(
+                    it, 
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(), 
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Button(
+                    onClick = { navController.navigateUp() }, 
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text("Cancel")
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                Button(onClick = {
-                    if (name.isBlank() || jobTitle.isBlank()) {
-                        error = "Name and Job Title are required"
-                    } else {
-                        error = null
-                        viewModel.updateEmployee(
-                            employee.copy(
-                                name = name,
-                                jobTitle = jobTitle,
-                                email = email.ifBlank { null },
-                                phone = phone.ifBlank { null },
-                                address = address.ifBlank { null }
-                            )
-                        )
-                        navController.popBackStack()
-                    }
-                }, modifier = Modifier.weight(1f)) {
+                Button(
+                    onClick = {
+                        if (name.isBlank() || jobTitle.isBlank()) {
+                            error = "Name and Job Title are required"
+                        } else {
+                            error = null
+                            try {
+                                viewModel.updateEmployee(
+                                    employee.copy(
+                                        name = name.trim(),
+                                        jobTitle = jobTitle.trim(),
+                                        email = email.trim().ifBlank { null },
+                                        phone = phone.trim().ifBlank { null },
+                                        address = address.trim().ifBlank { null }
+                                    )
+                                )
+                                navController.navigateUp()
+                            } catch (e: Exception) {
+                                error = "Failed to update employee. Please try again."
+                            }
+                        }
+                    }, 
+                    modifier = Modifier.weight(1f),
+                    enabled = name.isNotBlank() && jobTitle.isNotBlank()
+                ) {
                     Text("Save")
                 }
-            }
-            error?.let {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(it, color = MaterialTheme.colorScheme.error)
             }
         }
     }

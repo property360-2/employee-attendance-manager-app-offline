@@ -94,11 +94,19 @@ private val ModernDarkColorScheme = darkColorScheme(
 
 @Composable
 fun EmployeeattendancemanagerTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: String = "system",
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false, // Set to false to use our custom modern palette
     content: @Composable () -> Unit
 ) {
+    // Determine if dark theme should be used based on theme mode
+    val darkTheme = when (themeMode) {
+        "light" -> false
+        "dark" -> true
+        "system" -> isSystemInDarkTheme()
+        else -> isSystemInDarkTheme() // Default to system
+    }
+    
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current

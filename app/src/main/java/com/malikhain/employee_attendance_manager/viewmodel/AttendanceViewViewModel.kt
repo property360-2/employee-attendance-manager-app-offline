@@ -13,6 +13,7 @@ import org.threeten.bp.LocalDate
 import org.threeten.bp.ZoneOffset
 import javax.inject.Inject
 import kotlinx.coroutines.launch
+import java.util.*
 
 @HiltViewModel
 class AttendanceViewViewModel @Inject constructor(
@@ -68,7 +69,22 @@ class AttendanceViewViewModel @Inject constructor(
 
     fun editAttendance(employeeId: Int, status: String, date: Long) {
         viewModelScope.launch {
-            val existing = attendanceDao.getAttendanceByDate(employeeId, date)
+            // Calculate start and end of day for the given date
+            val calendar = Calendar.getInstance()
+            calendar.timeInMillis = date
+            calendar.set(Calendar.HOUR_OF_DAY, 0)
+            calendar.set(Calendar.MINUTE, 0)
+            calendar.set(Calendar.SECOND, 0)
+            calendar.set(Calendar.MILLISECOND, 0)
+            val startOfDay = calendar.timeInMillis
+            
+            calendar.set(Calendar.HOUR_OF_DAY, 23)
+            calendar.set(Calendar.MINUTE, 59)
+            calendar.set(Calendar.SECOND, 59)
+            calendar.set(Calendar.MILLISECOND, 999)
+            val endOfDay = calendar.timeInMillis
+            
+            val existing = attendanceDao.getAttendanceByDate(employeeId, startOfDay, endOfDay)
             if (existing != null) {
                 attendanceDao.updateAttendance(existing.copy(status = status))
             } else {

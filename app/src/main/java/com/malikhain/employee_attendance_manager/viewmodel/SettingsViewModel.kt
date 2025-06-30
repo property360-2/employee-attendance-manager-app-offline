@@ -47,6 +47,12 @@ class SettingsViewModel @Inject constructor(
     val darkMode: StateFlow<Boolean> = preferencesManager.isDarkMode
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
+    val themeMode: StateFlow<String> = preferencesManager.themeMode
+        .stateIn(viewModelScope, SharingStarted.Lazily, "system")
+
+    val language: StateFlow<String> = preferencesManager.language
+        .stateIn(viewModelScope, SharingStarted.Lazily, "en")
+
     val notifications: StateFlow<Boolean> = preferencesManager.isNotificationsEnabled
         .stateIn(viewModelScope, SharingStarted.Lazily, true)
 
@@ -68,6 +74,18 @@ class SettingsViewModel @Inject constructor(
     fun setDarkMode(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.setDarkMode(enabled)
+        }
+    }
+
+    fun setThemeMode(mode: String) {
+        viewModelScope.launch {
+            preferencesManager.setThemeMode(mode)
+        }
+    }
+
+    fun setLanguage(language: String) {
+        viewModelScope.launch {
+            preferencesManager.setLanguage(language)
         }
     }
 

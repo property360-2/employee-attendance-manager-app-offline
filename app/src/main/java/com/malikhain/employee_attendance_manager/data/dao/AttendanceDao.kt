@@ -30,8 +30,8 @@ interface AttendanceDao {
     @Query("SELECT * FROM attendance WHERE date >= :startOfDay AND date <= :endOfDay")
     fun getTodaysAttendance(startOfDay: Long, endOfDay: Long): Flow<List<Attendance>>
 
-    @Query("SELECT * FROM attendance WHERE date = :date AND employeeId = :employeeId LIMIT 1")
-    suspend fun getAttendanceByDate(employeeId: Int, date: Long): Attendance?
+    @Query("SELECT * FROM attendance WHERE employeeId = :employeeId AND date >= :startOfDay AND date <= :endOfDay LIMIT 1")
+    suspend fun getAttendanceByDate(employeeId: Int, startOfDay: Long, endOfDay: Long): Attendance?
 
     @Query("SELECT * FROM attendance ORDER BY date DESC")
     suspend fun getAllAttendance(): List<Attendance>

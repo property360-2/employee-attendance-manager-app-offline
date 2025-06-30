@@ -28,6 +28,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import androidx.compose.foundation.background
+import androidx.compose.ui.platform.LocalContext
+import com.malikhain.employee_attendance_manager.utils.ExportUtils
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,8 +51,67 @@ fun HomeScreen(navController: NavController) {
     var selectedStatus by remember { mutableStateOf("Present") }
     var selectedFilter by remember { mutableStateOf("All") }
     var showQuickActions by remember { mutableStateOf(false) }
+    var showPermissionDialog by remember { mutableStateOf(false) }
+    var isExporting by remember { mutableStateOf(false) }
+    
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     
     val filters = listOf("All", "Present", "Absent", "Leave", "Not Marked")
+    
+    // Permission launcher for storage access
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted || android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            // Permission granted or not needed (Android 10+), proceed with export
+            scope.launch {
+                isExporting = true
+                try {
+                    // Get attendance data from ViewModel
+                    val attendance = viewModel.getAllAttendance()
+                    val uri = ExportUtils.exportToExcel(context, employees, attendance)
+                    if (uri != null) {
+                        ExportUtils.shareFile(context, uri, "attendance_report.csv")
+                        snackbarHostState.showSnackbar("Data exported successfully!")
+                    } else {
+                        snackbarHostState.showSnackbar("Failed to export data")
+                    }
+                } catch (e: Exception) {
+                    snackbarHostState.showSnackbar("Export failed: ${e.message}")
+                } finally {
+                    isExporting = false
+                }
+            }
+        } else {
+            // Permission denied
+            scope.launch {
+                snackbarHostState.showSnackbar("Storage permission required to export data")
+            }
+        }
+    }
+    
+    // Function to check if we have storage permission
+    fun hasStoragePermission(): Boolean {
+        // For modern Android versions (API 29+), we don't need storage permission for app's cache directory
+        // For older versions, we'll use WRITE_EXTERNAL_STORAGE
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            // Android 10+ (API 29+) - no permission needed for app's cache directory
+            true
+        } else {
+            // Android 9 and below - need WRITE_EXTERNAL_STORAGE
+            context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+    
+    // Function to request appropriate permission
+    fun requestStoragePermission() {
+        // Only request permission for Android 9 and below
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+            permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
+    }
     
     LaunchedEffect(Unit) {
         viewModel.loadEmployees()
@@ -54,7 +124,7 @@ fun HomeScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dashboard") },
+                title = { Text("Today's Report") },
                 actions = {
                     IconButton(onClick = { navController.navigate("analytics") }) {
                         Icon(Icons.Default.BarChart, contentDescription = "Analytics")
@@ -69,10 +139,11 @@ fun HomeScreen(navController: NavController) {
             BottomNavigationBar(navController)
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate("add_employee") }) {
+            FloatingActionButton(onClick = { navController.navigate("add") }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Employee")
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -101,7 +172,7 @@ fun HomeScreen(navController: NavController) {
                 employees = employees,
                 employeesWithAttendance = employeesWithAttendance,
                 selectedFilter = selectedFilter,
-                onEmployeeClick = { employee -> navController.navigate("employee_details/${employee.id}") },
+                onEmployeeClick = { employee -> navController.navigate("details/${employee.id}") },
                 onMarkAttendance = { employeeId, status -> viewModel.markAttendance(employeeId, status) }
             )
         }
@@ -111,7 +182,37 @@ fun HomeScreen(navController: NavController) {
             QuickActionsMenu(
                 onDismiss = { showQuickActions = false },
                 onBulkMark = { showBulkMarkingDialog = true },
-                onExport = { /* TODO: Implement export */ },
+                onExport = { 
+                    // Check permission first
+                    when {
+                        hasStoragePermission() -> {
+                            // Permission already granted or not needed, proceed with export
+                            scope.launch {
+                                isExporting = true
+                                try {
+                                    // Get attendance data from ViewModel
+                                    val attendance = viewModel.getAllAttendance()
+                                    val uri = ExportUtils.exportToExcel(context, employees, attendance)
+                                    if (uri != null) {
+                                        ExportUtils.shareFile(context, uri, "attendance_report.csv")
+                                        snackbarHostState.showSnackbar("Data exported successfully!")
+                                    } else {
+                                        snackbarHostState.showSnackbar("Failed to export data")
+                                    }
+                                } catch (e: Exception) {
+                                    snackbarHostState.showSnackbar("Export failed: ${e.message}")
+                                } finally {
+                                    isExporting = false
+                                }
+                            }
+                        }
+                        else -> {
+                            // Request permission (only for Android 9 and below)
+                            requestStoragePermission()
+                        }
+                    }
+                    showQuickActions = false
+                },
                 onRefresh = { viewModel.loadEmployees() }
             )
         }
@@ -129,6 +230,53 @@ fun HomeScreen(navController: NavController) {
                     showBulkMarkingDialog = false
                 },
                 onDismiss = { showBulkMarkingDialog = false }
+            )
+        }
+        
+        // Permission Request Dialog
+        if (showPermissionDialog) {
+            AlertDialog(
+                onDismissRequest = { showPermissionDialog = false },
+                title = { Text("Permission Required") },
+                text = { 
+                    Text(
+                        "This app needs storage permission to export data to your device. " +
+                        "This permission is only required on older Android versions (Android 9 and below)."
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showPermissionDialog = false
+                            requestStoragePermission()
+                        }
+                    ) {
+                        Text("Grant Permission")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showPermissionDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+        
+        // Export Loading Dialog
+        if (isExporting) {
+            AlertDialog(
+                onDismissRequest = { },
+                title = { Text("Exporting Data") },
+                text = { 
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Please wait while we prepare your data for export...")
+                    }
+                },
+                confirmButton = { }
             )
         }
     }

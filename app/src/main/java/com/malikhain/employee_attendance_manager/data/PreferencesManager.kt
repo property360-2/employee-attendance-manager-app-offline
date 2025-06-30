@@ -19,6 +19,8 @@ class PreferencesManager @Inject constructor(
     
     private object PreferencesKeys {
         val DARK_MODE = booleanPreferencesKey("dark_mode")
+        val THEME_MODE = stringPreferencesKey("theme_mode") // "system", "light", "dark"
+        val LANGUAGE = stringPreferencesKey("language") // "en", "es", "fr", "de", "zh"
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val BIOMETRIC_AUTH_ENABLED = booleanPreferencesKey("biometric_auth_enabled")
         val AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
@@ -27,9 +29,10 @@ class PreferencesManager @Inject constructor(
         val SAVED_USERNAME = stringPreferencesKey("saved_username")
         val SESSION_TOKEN = stringPreferencesKey("session_token")
         val SESSION_EXPIRY = longPreferencesKey("session_expiry")
+        val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
     }
     
-    // Dark Mode
+    // Dark Mode (legacy - keeping for backward compatibility)
     val isDarkMode: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[PreferencesKeys.DARK_MODE] ?: false
     }
@@ -37,6 +40,28 @@ class PreferencesManager @Inject constructor(
     suspend fun setDarkMode(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.DARK_MODE] = enabled
+        }
+    }
+    
+    // Theme Mode (new implementation)
+    val themeMode: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.THEME_MODE] ?: "system"
+    }
+    
+    suspend fun setThemeMode(mode: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.THEME_MODE] = mode
+        }
+    }
+    
+    // Language
+    val language: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.LANGUAGE] ?: "en"
+    }
+    
+    suspend fun setLanguage(language: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.LANGUAGE] = language
         }
     }
     
@@ -132,6 +157,17 @@ class PreferencesManager @Inject constructor(
     suspend fun setSessionExpiry(timestamp: Long) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.SESSION_EXPIRY] = timestamp
+        }
+    }
+    
+    // Onboarding Completion
+    val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.ONBOARDING_COMPLETED] ?: false
+    }
+    
+    suspend fun setOnboardingCompleted(completed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ONBOARDING_COMPLETED] = completed
         }
     }
     

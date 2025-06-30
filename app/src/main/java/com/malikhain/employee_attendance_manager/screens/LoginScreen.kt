@@ -44,25 +44,13 @@ fun LoginScreen(navController: NavController) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var rememberMe by remember { mutableStateOf(false) }
-    var rememberUsername by remember { mutableStateOf(false) }
     
     val loginState by viewModel.loginState.collectAsState()
     val biometricAvailable by viewModel.biometricAvailable.collectAsState()
-    val savedUsername by viewModel.savedUsername.collectAsState()
-    val rememberUsernameSetting by viewModel.rememberUsername.collectAsState()
     
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
-
-    // Load saved username if available
-    LaunchedEffect(savedUsername, rememberUsernameSetting) {
-        if (rememberUsernameSetting && savedUsername != null) {
-            username = savedUsername!!
-            rememberUsername = true
-        }
-    }
 
     LaunchedEffect(loginState) {
         when (loginState) {
@@ -117,18 +105,9 @@ fun LoginScreen(navController: NavController) {
                 onPasswordChange = { password = it },
                 passwordVisible = passwordVisible,
                 onPasswordVisibilityChange = { passwordVisible = it },
-                rememberMe = rememberMe,
-                onRememberMeChange = { rememberMe = it },
-                rememberUsername = rememberUsername,
-                onRememberUsernameChange = { 
-                    rememberUsername = it
-                    viewModel.setRememberUsername(it)
-                },
-                onLogin = { viewModel.login(username, password, rememberMe) },
-                onBiometricLogin = { viewModel.loginWithBiometric() },
+                onLogin = { viewModel.login(username.trim(), password) },
                 onRegister = { navController.navigate("register") },
-                loginState = loginState,
-                biometricAvailable = biometricAvailable
+                loginState = loginState
             )
         }
     }
@@ -142,15 +121,9 @@ private fun LoginContent(
     onPasswordChange: (String) -> Unit,
     passwordVisible: Boolean,
     onPasswordVisibilityChange: (Boolean) -> Unit,
-    rememberMe: Boolean,
-    onRememberMeChange: (Boolean) -> Unit,
-    rememberUsername: Boolean,
-    onRememberUsernameChange: (Boolean) -> Unit,
     onLogin: () -> Unit,
-    onBiometricLogin: () -> Unit,
     onRegister: () -> Unit,
-    loginState: LoginState,
-    biometricAvailable: Boolean
+    loginState: LoginState
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -208,51 +181,13 @@ private fun LoginContent(
                 enabled = loginState !is LoginState.Loading
             )
             
-            // Password strength indicator
-            if (password.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                PasswordStrengthIndicator(password = password)
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Remember options
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = rememberMe,
-                        onCheckedChange = onRememberMeChange,
-                        enabled = loginState !is LoginState.Loading
-                    )
-                    Text(
-                        "Remember me",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = rememberUsername,
-                        onCheckedChange = onRememberUsernameChange,
-                        enabled = loginState !is LoginState.Loading
-                    )
-                    Text(
-                        "Remember username",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-            
             Spacer(modifier = Modifier.height(24.dp))
             
             // Login button
             Button(
                 onClick = onLogin,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = loginState !is LoginState.Loading && username.isNotBlank() && password.isNotBlank()
+                enabled = loginState !is LoginState.Loading && username.trim().isNotBlank() && password.isNotBlank()
             ) {
                 if (loginState is LoginState.Loading) {
                     CircularProgressIndicator(
@@ -262,24 +197,6 @@ private fun LoginContent(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Text("Sign In")
-            }
-            
-            // Biometric login button
-            if (biometricAvailable) {
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedButton(
-                    onClick = onBiometricLogin,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = loginState !is LoginState.Loading
-                ) {
-                    Icon(
-                        Icons.Default.Lock,
-                        contentDescription = "Biometric",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Sign in with Biometric")
-                }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -314,69 +231,6 @@ private fun LoginContent(
             }
         }
     }
-}
-
-@Composable
-private fun PasswordStrengthIndicator(password: String) {
-    val strength = calculatePasswordStrength(password)
-    val strengthInfo = when (strength) {
-        0 -> Pair(Color.Gray, "Very Weak")
-        1 -> Pair(Color.Red, "Weak")
-        2 -> Pair(Color(0xFFFF9800), "Fair")
-        3 -> Pair(Color.Yellow, "Good")
-        4 -> Pair(Color.Green, "Strong")
-        else -> Pair(Color.Green, "Very Strong")
-    }
-    
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                "Password Strength:",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                strengthInfo.second,
-                style = MaterialTheme.typography.bodySmall,
-                color = strengthInfo.first
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(4.dp))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            repeat(5) { index ->
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(
-                            if (index < strength) strengthInfo.first else MaterialTheme.colorScheme.surfaceVariant
-                        )
-                )
-            }
-        }
-    }
-}
-
-private fun calculatePasswordStrength(password: String): Int {
-    var strength = 0
-    
-    if (password.length >= 8) strength++
-    if (password.any { it.isUpperCase() }) strength++
-    if (password.any { it.isLowerCase() }) strength++
-    if (password.any { it.isDigit() }) strength++
-    if (password.any { !it.isLetterOrDigit() }) strength++
-    
-    return strength
 }
 
 // TODO: Add "Remember me/Stay logged in" option with secure token storage

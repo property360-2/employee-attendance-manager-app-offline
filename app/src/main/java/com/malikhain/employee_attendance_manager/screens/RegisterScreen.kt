@@ -3,6 +3,7 @@ package com.malikhain.employee_attendance_manager.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -233,7 +234,8 @@ fun RegisterScreen(navController: NavController) {
                                         append("Terms and Conditions")
                                     }
                                 },
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.clickable { navController.navigate("terms_and_conditions") }
                             )
                         }
                         
@@ -256,7 +258,8 @@ fun RegisterScreen(navController: NavController) {
                                         append("Privacy Policy")
                                     }
                                 },
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.clickable { navController.navigate("privacy_policy") }
                             )
                         }
                     }

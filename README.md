@@ -1,64 +1,63 @@
-# Employee Attendance Manager
+# Employee Attendance Manager 📱
 
-An Android application built with modern Android development tools to help manage employee attendance records efficiently.
+A modern Android application built with **Jetpack Compose**, **MVVM architecture**, and **Room database** to efficiently manage employee attendance records with enhanced security and user experience.
+
+[![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-0095D5?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-4285F4?style=for-the-badge&logo=jetpack-compose&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![Room Database](https://img.shields.io/badge/Room_Database-4285F4?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/training/data-storage/room)
 
 ## ✨ Features
 
-### 🔐 **Enhanced Security**
-- **Secure Password Hashing**: Passwords are now hashed using BCrypt for enhanced security
-- **Account Lockout Protection**: Automatic account lockout after 5 failed login attempts (15-minute lockout)
-- **Password Validation**: Strong password requirements with real-time validation
-- **Username Validation**: Secure username format requirements
-- **Email Validation**: Proper email format validation
-- **Session Management**: Secure session handling with token expiration
-- **Forgot Password**: Password reset functionality via email
-
-### 👤 **Authentication & User Management**
-- **Admin Authentication**: Secure registration and login for administrators
-- **Password Visibility Toggle**: Show/hide password for better UX
-- **Loading States**: Visual feedback during authentication processes
-- **Error Handling**: Comprehensive error messages and validation feedback
+### 🔐 **Authentication & Security**
+- **Secure Admin Authentication**: Registration and login with password hashing
+- **Biometric Authentication**: Fingerprint/face unlock support
+- **Session Management**: Secure session handling with automatic logout
+- **Password Change**: Secure password update functionality
+- **Input Validation**: Comprehensive validation for all user inputs
 - **Account Recovery**: Password reset via username and email verification
 
-### 📊 **Enhanced Dashboard**
+### 📊 **Dashboard & Analytics**
 - **Real-time Statistics**: Live attendance overview with present/absent/leave counts
 - **Attendance Rate**: Percentage-based attendance tracking
-- **Visual Indicators**: Color-coded status buttons and progress indicators
-- **Empty States**: Helpful messages when no data is available
-- **Search Functionality**: Real-time employee search with improved UX
+- **Quick Filters**: Today, This Week, This Month views
+- **Advanced Search**: Real-time employee search with filters
+- **Color-coded Status**: Visual indicators for attendance status
+- **Today's Summary**: Quick overview cards with key metrics
+- **Employee Avatars**: Visual identification with initials/avatars
 
 ### 👥 **Employee Management**
 - **Add New Employees**: Comprehensive employee registration with validation
 - **Edit Employee Details**: Update employee information seamlessly
-- **Employee List**: Enhanced list view with additional details
+- **Employee List**: Enhanced list view with search and filters
 - **Employee Details**: Detailed employee profiles with attendance history
 - **Quick Actions**: Fast attendance marking directly from the dashboard
+- **Bulk Operations**: Mark attendance for multiple employees
 
 ### 📈 **Attendance Tracking**
-- **Quick Marking**: Mark attendance as "Present," "Absent," or "On Leave" directly from the dashboard
-- **Daily Tracking**: Track attendance for each day with timestamp
-- **Attendance History**: Detailed attendance records with filtering options
+- **Quick Marking**: Mark attendance as "Present," "Absent," or "On Leave"
+- **Daily Tracking**: Track attendance with actual timestamps
+- **Attendance History**: Detailed attendance records with filtering
 - **Editable Records**: Update attendance status at any time
 - **Visual Status**: Color-coded attendance status indicators
+- **Export Data**: Export attendance data to CSV format
 
-### ⚙️ **Settings & Preferences**
-- **Dark Mode Toggle**: Switch between light and dark themes
-- **Notification Settings**: Configure push notification preferences
-- **Biometric Authentication**: Optional fingerprint/face unlock support
-- **Auto Backup**: Automatic data backup configuration
-- **Data Export**: Export attendance data to CSV format
-- **Data Import**: Import data from external files
-- **Manual Backup**: Create on-demand data backups
-- **Security Settings**: Configure security preferences
-- **App Information**: Version details and support information
+### ⚙️ **Settings & Customization**
+- **Theme Management**: System/Light/Dark mode support with persistence
+- **Data Import/Export**: Import data from files and export to CSV
+- **Cloud Backup**: Google Drive/Dropbox integration
+- **Help & Support**: Contact information and FAQ
+- **Terms & Privacy**: Terms and Conditions and Privacy Policy pages
+- **Data Retention**: Automatic data cleanup policies
+- **Notification Preferences**: Configure push notification settings
 
 ### 📱 **User Experience**
 - **Modern UI**: Material 3 design with beautiful animations
 - **Responsive Layout**: Optimized for different screen sizes
-- **Accessibility**: Screen reader support and proper focus management
 - **Loading States**: Skeleton screens and progress indicators
 - **Error Handling**: User-friendly error messages and recovery options
 - **Navigation**: Intuitive bottom navigation with proper state management
+- **Onboarding**: Interactive tutorial for first-time users
 
 ## 🛠️ Tech Stack & Architecture
 
@@ -71,20 +70,14 @@ An Android application built with modern Android development tools to help manag
 ### **Backend & Data**
 - **Room Database**: Local SQLite database with Room ORM
 - **DataStore**: Secure preferences management
-- **Encryption**: Database encryption with SQLCipher
-- **Migration**: Automatic database schema migration
-
-### **Security**
-- **BCrypt**: Secure password hashing
-- **Account Lockout**: Brute force protection
-- **Input Validation**: Comprehensive validation for all user inputs
-- **Session Management**: Secure session handling
+- **Hilt**: Dependency injection for clean architecture
+- **Coroutines & Flow**: Asynchronous programming and reactive streams
 
 ### **Architecture**
 - **MVVM Pattern**: Model-View-ViewModel architecture
-- **Dependency Injection**: Hilt for managing dependencies
-- **Coroutines & Flow**: Asynchronous programming and reactive streams
 - **Repository Pattern**: Clean data access layer
+- **Use Cases**: Business logic separation
+- **Clean Architecture**: Separation of concerns
 
 ### **Additional Libraries**
 - **ThreeTenABP**: Date/time handling
@@ -96,7 +89,7 @@ An Android application built with modern Android development tools to help manag
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/employee-attendance-manager.git
+   git clone https://github.com/property360-2/employee-attendance-manager.git
    ```
 
 2. **Open in Android Studio**:
@@ -110,19 +103,19 @@ An Android application built with modern Android development tools to help manag
 
 ## 🔧 Configuration
 
-### **Database Migration**
-The app automatically handles database migrations. If you're upgrading from a previous version, the app will migrate your data automatically.
+### **Database Setup**
+The app automatically handles database setup and migrations. No manual configuration required.
 
 ### **Security Settings**
 - Passwords must be at least 8 characters long
-- Passwords must contain uppercase, lowercase, number, and special character
-- Usernames must be at least 3 characters and contain only letters, numbers, and underscores
-- Account lockout occurs after 5 failed login attempts
+- Usernames must be at least 3 characters
+- Account lockout protection after failed attempts
+- Secure session management
 
-### **Notifications**
-- Create notification channels automatically
-- Configure notification preferences in Settings
-- Support for attendance reminders and backup notifications
+### **Permissions**
+- Storage access for data import/export
+- Biometric authentication (optional)
+- Notification permissions
 
 ## 📱 Screenshots
 
@@ -130,39 +123,32 @@ The app automatically handles database migrations. If you're upgrading from a pr
 
 ## 🔒 Security Features
 
-### **Password Security**
-- BCrypt hashing with salt
-- Strong password requirements
+### **Authentication Security**
+- Secure password hashing
 - Account lockout protection
-- Secure session management
+- Session timeout management
+- Biometric authentication support
 
 ### **Data Protection**
-- Database encryption
+- Local database encryption
 - Secure preferences storage
 - Input validation and sanitization
 - Error handling without data exposure
 
-### **Authentication**
-- Multi-factor authentication support
-- Biometric authentication
-- Session timeout
-- Secure logout
-
 ## 🚧 Future Enhancements
 
 ### **Planned Features**
-- [ ] Offline support with sync
-- [ ] Cloud backup integration
-- [ ] Advanced analytics and reporting
-- [ ] Employee photo management
-- [ ] Department and role management
-- [ ] Holiday calendar integration
-- [ ] Advanced filtering and sorting
-- [ ] Bulk operations
-- [ ] Export to multiple formats (PDF, Excel)
-- [ ] Real-time collaboration
-- [ ] API integration
-- [ ] Multi-language support
+- [ ] QR Code Attendance: Scan-based attendance marking
+- [ ] Geolocation: Location-based attendance verification
+- [ ] Time Tracking: Detailed time in/out tracking
+- [ ] Leave Management: Leave request and approval system
+- [ ] Payroll Integration: Basic payroll calculations
+- [ ] Advanced Analytics: Interactive charts and reports
+- [ ] Team Management: Department and team organization
+- [ ] Shift Management: Multiple shift support
+- [ ] Offline Support: Offline mode with sync
+- [ ] API Integration: Connect to external services
+- [ ] Widget Support: Home screen widgets
 
 ### **Technical Improvements**
 - [ ] Unit and integration tests
@@ -183,6 +169,11 @@ The app automatically handles database migrations. If you're upgrading from a pr
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Author
+
+**property360-2**
+- GitHub: [@property360-2](https://github.com/property360-2)
 
 ## 🙏 Acknowledgments
 

@@ -20,27 +20,57 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import com.malikhain.employee_attendance_manager.navigation.Screen
+import com.malikhain.employee_attendance_manager.viewmodel.EmployeeViewModel
+import com.malikhain.employee_attendance_manager.viewmodel.EmployeeWithAttendance
+import com.malikhain.employee_attendance_manager.screens.components.DashboardStats
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import androidx.compose.foundation.background
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import android.net.Uri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController) {
-    var darkMode by remember { mutableStateOf(false) }
-    var notifications by remember { mutableStateOf(true) }
-    var biometricAuth by remember { mutableStateOf(false) }
-    var autoBackup by remember { mutableStateOf(true) }
-    var cloudBackup by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
-    var showLanguageDialog by remember { mutableStateOf(false) }
-    var showNotificationSettings by remember { mutableStateOf(false) }
-    var showSecuritySettings by remember { mutableStateOf(false) }
     var showDataRetentionDialog by remember { mutableStateOf(false) }
     
     val viewModel: SettingsViewModel = hiltViewModel()
     val exportState by viewModel.exportState.collectAsState()
+    val themeMode by viewModel.themeMode.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // File picker launcher for import
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { selectedUri ->
+            scope.launch {
+                try {
+                    // TODO: Implement actual import logic based on file type
+                    snackbarHostState.showSnackbar("File selected: ${selectedUri.lastPathSegment}")
+                } catch (e: Exception) {
+                    snackbarHostState.showSnackbar("Import failed: ${e.message}")
+                }
+            }
+        }
+    }
 
     LaunchedEffect(exportState) {
         when (val currentState = exportState) {
@@ -69,7 +99,8 @@ fun SettingsScreen(navController: NavController) {
         },
         bottomBar = {
             BottomNavigationBar(navController)
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -84,34 +115,8 @@ fun SettingsScreen(navController: NavController) {
                     SettingsItem(
                         icon = Icons.Default.Palette,
                         title = "Theme",
-                        subtitle = "Choose your preferred theme",
+                        subtitle = "Current: ${themeMode.replaceFirstChar { it.uppercase() }}",
                         onClick = { showThemeDialog = true }
-                    )
-                    
-                    SettingsItem(
-                        icon = Icons.Default.Language,
-                        title = "Language",
-                        subtitle = "Select your language",
-                        onClick = { showLanguageDialog = true }
-                    )
-                    
-                    SettingsItem(
-                        icon = Icons.Default.Notifications,
-                        title = "Notifications",
-                        subtitle = "Configure notification preferences",
-                        onClick = { showNotificationSettings = true }
-                    )
-                    
-                    SettingsItem(
-                        icon = Icons.Default.Person,
-                        title = "Biometric Authentication",
-                        subtitle = "Use fingerprint or face unlock",
-                        trailing = {
-                            Switch(
-                                checked = biometricAuth,
-                                onCheckedChange = { biometricAuth = it }
-                            )
-                        }
                     )
                 }
             }
@@ -132,69 +137,17 @@ fun SettingsScreen(navController: NavController) {
                         subtitle = "Export data in various formats",
                         onClick = { showExportDialog = true }
                     )
-                    
-                    SettingsItem(
-                        icon = Icons.Default.Upload,
-                        title = "Cloud Backup",
-                        subtitle = "Backup data to cloud storage",
-                        trailing = {
-                            Switch(
-                                checked = cloudBackup,
-                                onCheckedChange = { cloudBackup = it }
-                            )
-                        }
-                    )
-                    
-                    SettingsItem(
-                        icon = Icons.Default.Save,
-                        title = "Auto Backup",
-                        subtitle = "Automatically backup data",
-                        trailing = {
-                            Switch(
-                                checked = autoBackup,
-                                onCheckedChange = { autoBackup = it }
-                            )
-                        }
-                    )
-                    
-                    SettingsItem(
-                        icon = Icons.Default.AccessTime,
-                        title = "Data Retention",
-                        subtitle = "Configure data retention policies",
-                        onClick = { showDataRetentionDialog = true }
-                    )
                 }
             }
             
-            // Security Section
+            // Help & Support Section
             item {
-                SettingsSection(title = "Security") {
+                SettingsSection(title = "Help & Support") {
                     SettingsItem(
-                        icon = Icons.Default.Lock,
-                        title = "Change Password",
-                        subtitle = "Update your admin password",
-                        onClick = { navController.navigate("change_password") }
-                    )
-                    
-                    SettingsItem(
-                        icon = Icons.Default.Lock,
-                        title = "Security Settings",
-                        subtitle = "Configure advanced security options",
-                        onClick = { showSecuritySettings = true }
-                    )
-                    
-                    SettingsItem(
-                        icon = Icons.Default.History,
-                        title = "Login History",
-                        subtitle = "View recent login activity",
-                        onClick = { /* TODO: Show login history */ }
-                    )
-                    
-                    SettingsItem(
-                        icon = Icons.Default.Settings,
-                        title = "Device Management",
-                        subtitle = "Manage connected devices",
-                        onClick = { /* TODO: Show device management */ }
+                        icon = Icons.Default.Help,
+                        title = "Help & Support",
+                        subtitle = "Contact support team for assistance",
+                        onClick = { navController.navigate("help_support") }
                     )
                 }
             }
@@ -210,24 +163,17 @@ fun SettingsScreen(navController: NavController) {
                     )
                     
                     SettingsItem(
-                        icon = Icons.Default.Help,
-                        title = "Help & Support",
-                        subtitle = "Get help and contact support",
-                        onClick = { /* TODO: Show help */ }
-                    )
-                    
-                    SettingsItem(
                         icon = Icons.Default.Info,
                         title = "Privacy Policy",
                         subtitle = "Read our privacy policy",
-                        onClick = { /* TODO: Show privacy policy */ }
+                        onClick = { navController.navigate("privacy_policy") }
                     )
                     
                     SettingsItem(
                         icon = Icons.Default.Description,
                         title = "Terms of Service",
                         subtitle = "Read our terms of service",
-                        onClick = { /* TODO: Show terms */ }
+                        onClick = { navController.navigate("terms_and_conditions") }
                     )
                 }
             }
@@ -261,36 +207,12 @@ fun SettingsScreen(navController: NavController) {
         // Theme Selection Dialog
         if (showThemeDialog) {
             ThemeSelectionDialog(
+                currentTheme = themeMode,
                 onDismiss = { showThemeDialog = false },
                 onThemeSelected = { theme ->
-                    // TODO: Implement theme change
+                    viewModel.setThemeMode(theme)
                     showThemeDialog = false
                 }
-            )
-        }
-        
-        // Language Selection Dialog
-        if (showLanguageDialog) {
-            LanguageSelectionDialog(
-                onDismiss = { showLanguageDialog = false },
-                onLanguageSelected = { language ->
-                    // TODO: Implement language change
-                    showLanguageDialog = false
-                }
-            )
-        }
-        
-        // Notification Settings Dialog
-        if (showNotificationSettings) {
-            NotificationSettingsDialog(
-                onDismiss = { showNotificationSettings = false }
-            )
-        }
-        
-        // Security Settings Dialog
-        if (showSecuritySettings) {
-            SecuritySettingsDialog(
-                onDismiss = { showSecuritySettings = false }
             )
         }
         
@@ -305,8 +227,13 @@ fun SettingsScreen(navController: NavController) {
         if (showImportDialog) {
             ImportDataDialog(
                 onDismiss = { showImportDialog = false },
-                onImport = { fileUri ->
-                    viewModel.importData(fileUri)
+                onImport = { importType ->
+                    when (importType) {
+                        "employees" -> filePickerLauncher.launch("text/csv")
+                        "attendance" -> filePickerLauncher.launch("text/csv")
+                        "all" -> filePickerLauncher.launch("application/json")
+                        else -> filePickerLauncher.launch("*/*")
+                    }
                     showImportDialog = false
                 }
             )
@@ -447,11 +374,14 @@ private fun SettingsItem(
 
 @Composable
 private fun ThemeSelectionDialog(
+    currentTheme: String,
     onDismiss: () -> Unit,
     onThemeSelected: (String) -> Unit
 ) {
     val themes = listOf("System", "Light", "Dark")
-    var selectedTheme by remember { mutableStateOf("System") }
+    var selectedTheme by remember { 
+        mutableStateOf(currentTheme.replaceFirstChar { it.uppercase() })
+    }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -476,276 +406,10 @@ private fun ThemeSelectionDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onThemeSelected(selectedTheme) }) {
+            TextButton(onClick = { 
+                onThemeSelected(selectedTheme.lowercase())
+            }) {
                 Text("Apply")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-@Composable
-private fun LanguageSelectionDialog(
-    onDismiss: () -> Unit,
-    onLanguageSelected: (String) -> Unit
-) {
-    val languages = listOf("English", "Spanish", "French", "German", "Chinese")
-    var selectedLanguage by remember { mutableStateOf("English") }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Select Language") },
-        text = {
-            Column {
-                languages.forEach { language ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = selectedLanguage == language,
-                            onClick = { selectedLanguage = language }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(language)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onLanguageSelected(selectedLanguage) }) {
-                Text("Apply")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-@Composable
-private fun NotificationSettingsDialog(
-    onDismiss: () -> Unit
-) {
-    var attendanceReminders by remember { mutableStateOf(true) }
-    var dailyReports by remember { mutableStateOf(false) }
-    var weeklyReports by remember { mutableStateOf(true) }
-    var soundEnabled by remember { mutableStateOf(true) }
-    var vibrationEnabled by remember { mutableStateOf(true) }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Notification Settings") },
-        text = {
-            Column {
-                SettingsItem(
-                    icon = Icons.Default.Schedule,
-                    title = "Attendance Reminders",
-                    subtitle = "Daily reminders to mark attendance",
-                    trailing = {
-                        Switch(
-                            checked = attendanceReminders,
-                            onCheckedChange = { attendanceReminders = it }
-                        )
-                    }
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Schedule,
-                    title = "Daily Reports",
-                    subtitle = "Receive daily attendance summaries",
-                    trailing = {
-                        Switch(
-                            checked = dailyReports,
-                            onCheckedChange = { dailyReports = it }
-                        )
-                    }
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Schedule,
-                    title = "Weekly Reports",
-                    subtitle = "Receive weekly attendance reports",
-                    trailing = {
-                        Switch(
-                            checked = weeklyReports,
-                            onCheckedChange = { weeklyReports = it }
-                        )
-                    }
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.VolumeUp,
-                    title = "Sound",
-                    subtitle = "Play sound for notifications",
-                    trailing = {
-                        Switch(
-                            checked = soundEnabled,
-                            onCheckedChange = { soundEnabled = it }
-                        )
-                    }
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Vibration,
-                    title = "Vibration",
-                    subtitle = "Vibrate for notifications",
-                    trailing = {
-                        Switch(
-                            checked = vibrationEnabled,
-                            onCheckedChange = { vibrationEnabled = it }
-                        )
-                    }
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Save")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-@Composable
-private fun SecuritySettingsDialog(
-    onDismiss: () -> Unit
-) {
-    var sessionTimeout by remember { mutableStateOf(30) }
-    var requireBiometric by remember { mutableStateOf(true) }
-    var auditLogging by remember { mutableStateOf(true) }
-    var dataEncryption by remember { mutableStateOf(true) }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Security Settings") },
-        text = {
-            Column {
-                SettingsItem(
-                    icon = Icons.Default.AccessTime,
-                    title = "Backup Schedule",
-                    subtitle = "Configure automatic backup schedule"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Info,
-                    title = "Data Analytics",
-                    subtitle = "View data usage and analytics"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Analytics,
-                    title = "Performance",
-                    subtitle = "Monitor app performance"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Info,
-                    title = "Sound",
-                    subtitle = "Configure notification sounds"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Info,
-                    title = "Vibration",
-                    subtitle = "Configure vibration patterns"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Schedule,
-                    title = "Auto Lock",
-                    subtitle = "Configure automatic lock timer"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Lock,
-                    title = "Biometric",
-                    subtitle = "Configure biometric authentication"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.History,
-                    title = "Audit Log",
-                    subtitle = "View security audit logs"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Lock,
-                    title = "Encryption",
-                    subtitle = "Configure data encryption"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Schedule,
-                    title = "Session Timeout",
-                    subtitle = "Configure session timeout"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Delete,
-                    title = "Clear Cache",
-                    subtitle = "Clear app cache and temporary files"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Save,
-                    title = "Backup Now",
-                    subtitle = "Create manual backup"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Person,
-                    title = "User Management",
-                    subtitle = "Manage user accounts and permissions"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Schedule,
-                    title = "Time Tracking",
-                    subtitle = "Configure time tracking settings"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Info,
-                    title = "Data Usage",
-                    subtitle = "Monitor data usage and limits"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Person,
-                    title = "Team Management",
-                    subtitle = "Manage team members and roles"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Schedule,
-                    title = "Work Schedule",
-                    subtitle = "Configure work schedules"
-                )
-                
-                SettingsItem(
-                    icon = Icons.Default.Info,
-                    title = "Storage",
-                    subtitle = "Manage storage and data usage"
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Save")
             }
         },
         dismissButton = {

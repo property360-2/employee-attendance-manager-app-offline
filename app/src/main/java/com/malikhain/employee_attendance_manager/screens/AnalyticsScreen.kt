@@ -18,18 +18,23 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.malikhain.employee_attendance_manager.data.entities.Attendance
+import com.malikhain.employee_attendance_manager.data.entities.Employee
 import com.malikhain.employee_attendance_manager.viewmodel.AttendanceViewModel
+import com.malikhain.employee_attendance_manager.viewmodel.EmployeeViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(navController: NavController) {
-    val viewModel: AttendanceViewModel = hiltViewModel()
-    val allAttendance by viewModel.allAttendance.collectAsState()
+    val attendanceViewModel: AttendanceViewModel = hiltViewModel()
+    val employeeViewModel: EmployeeViewModel = hiltViewModel()
+    val allAttendance by attendanceViewModel.allAttendance.collectAsState()
+    val employees by employeeViewModel.employees.collectAsState()
     
     LaunchedEffect(Unit) {
-        viewModel.loadAllAttendance()
+        attendanceViewModel.loadAllAttendance()
+        employeeViewModel.loadEmployees()
     }
 
     Scaffold(
@@ -60,7 +65,7 @@ fun AnalyticsScreen(navController: NavController) {
             }
             
             item {
-                AttendanceSummaryCard(allAttendance)
+                AttendanceSummaryCard(allAttendance, employees)
             }
             
             item {
@@ -70,16 +75,12 @@ fun AnalyticsScreen(navController: NavController) {
             item {
                 StatusDistributionCard(allAttendance)
             }
-            
-            item {
-                TopPerformersCard(allAttendance)
-            }
         }
     }
 }
 
 @Composable
-private fun AttendanceSummaryCard(attendance: List<Attendance>) {
+private fun AttendanceSummaryCard(attendance: List<Attendance>, employees: List<Employee>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -100,6 +101,12 @@ private fun AttendanceSummaryCard(attendance: List<Attendance>) {
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 StatItem(
+                    label = "Total Employees",
+                    value = employees.size.toString(),
+                    icon = Icons.Default.Person
+                )
+                
+                StatItem(
                     label = "Total Records",
                     value = attendance.size.toString(),
                     icon = Icons.Default.Check
@@ -110,11 +117,33 @@ private fun AttendanceSummaryCard(attendance: List<Attendance>) {
                     value = attendance.count { it.status == "Present" }.toString(),
                     icon = Icons.Default.Person
                 )
-                
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
                 StatItem(
                     label = "Absent",
                     value = attendance.count { it.status == "Absent" }.toString(),
                     icon = Icons.Default.Person
+                )
+                
+                StatItem(
+                    label = "Leave",
+                    value = attendance.count { it.status == "Leave" }.toString(),
+                    icon = Icons.Default.Info
+                )
+                
+                StatItem(
+                    label = "Attendance Rate",
+                    value = if (attendance.isNotEmpty()) {
+                        val presentCount = attendance.count { it.status == "Present" }
+                        "${(presentCount * 100 / attendance.size)}%"
+                    } else "0%",
+                    icon = Icons.Default.Check
                 )
             }
         }
@@ -214,76 +243,6 @@ private fun StatusDistributionCard(attendance: List<Attendance>) {
             } else {
                 Text(
                     "No attendance data available",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TopPerformersCard(attendance: List<Attendance>) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                "Top Performers",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Group attendance by employee and calculate attendance rate
-            val employeeStats = attendance
-                .groupBy { it.employeeId }
-                .mapValues { (_, employeeAttendance) ->
-                    val presentCount = employeeAttendance.count { it.status == "Present" }
-                    val totalCount = employeeAttendance.size
-                    val rate = if (totalCount > 0) (presentCount * 100 / totalCount) else 0
-                    Triple(presentCount, totalCount, rate)
-                }
-                .toList()
-                .sortedByDescending { it.second.third }
-                .take(5)
-            
-            if (employeeStats.isNotEmpty()) {
-                employeeStats.forEachIndexed { index, (employeeId, stats) ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "#${index + 1}",
-                            modifier = Modifier.width(30.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        
-                        Text(
-                            "Employee $employeeId",
-                            modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        
-                        Text(
-                            "${stats.third}%",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            } else {
-                Text(
-                    "No performance data available",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center

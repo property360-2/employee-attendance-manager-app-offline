@@ -79,11 +79,31 @@ class EmployeeViewModel @Inject constructor(
     }
 
     fun addEmployee(employee: Employee) {
-        viewModelScope.launch { employeeDao.insertEmployee(employee) }
+        viewModelScope.launch { 
+            try {
+                employeeDao.insertEmployee(employee)
+                // Refresh the employee list after adding
+                loadEmployees()
+                loadEmployeesWithAttendance()
+            } catch (e: Exception) {
+                // Handle error
+                throw e
+            }
+        }
     }
 
     fun updateEmployee(employee: Employee) {
-        viewModelScope.launch { employeeDao.updateEmployee(employee) }
+        viewModelScope.launch { 
+            try {
+                employeeDao.updateEmployee(employee)
+                // Refresh the employee list after updating
+                loadEmployees()
+                loadEmployeesWithAttendance()
+            } catch (e: Exception) {
+                // Handle error
+                throw e
+            }
+        }
     }
 
     fun deleteEmployee(employee: Employee) {
@@ -103,10 +123,27 @@ class EmployeeViewModel @Inject constructor(
 
     fun editAttendance(employeeId: Int, status: String, date: Long) {
         viewModelScope.launch {
-            val existing = attendanceDao.getAttendanceByDate(employeeId, date)
+            // For today's attendance, we need to check if there's already a record for today
+            val calendar = Calendar.getInstance()
+            calendar.set(Calendar.HOUR_OF_DAY, 0)
+            calendar.set(Calendar.MINUTE, 0)
+            calendar.set(Calendar.SECOND, 0)
+            calendar.set(Calendar.MILLISECOND, 0)
+            val startOfDay = calendar.timeInMillis
+            
+            calendar.set(Calendar.HOUR_OF_DAY, 23)
+            calendar.set(Calendar.MINUTE, 59)
+            calendar.set(Calendar.SECOND, 59)
+            calendar.set(Calendar.MILLISECOND, 999)
+            val endOfDay = calendar.timeInMillis
+            
+            // Check if there's an existing attendance record for today
+            val existing = attendanceDao.getAttendanceByDate(employeeId, startOfDay, endOfDay)
             if (existing != null) {
-                attendanceDao.updateAttendance(existing.copy(status = status))
+                // Update existing record with new status and current time
+                attendanceDao.updateAttendance(existing.copy(status = status, date = date))
             } else {
+                // Create new record with current time
                 attendanceDao.insertAttendance(
                     Attendance(employeeId = employeeId, status = status, date = date)
                 )
@@ -115,13 +152,13 @@ class EmployeeViewModel @Inject constructor(
     }
 
     fun markAttendance(employeeId: Int, status: String) {
-        val today = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-        editAttendance(employeeId, status, today)
+        val currentTime = System.currentTimeMillis()
+        editAttendance(employeeId, status, currentTime)
+        
+        // Refresh attendance data after marking
+        viewModelScope.launch {
+            loadEmployeesWithAttendance()
+        }
     }
 
     fun searchEmployees(query: String) {
@@ -141,7 +178,19 @@ class EmployeeViewModel @Inject constructor(
 
     fun getEmployee(employeeId: Int): StateFlow<Employee?> {
         return flow {
-            emit(employeeDao.getEmployeeById(employeeId))
+            try {
+                // First try to get from the current list
+                val existingEmployee = _employees.value.find { it.id == employeeId }
+                if (existingEmployee != null) {
+                    emit(existingEmployee)
+                } else {
+                    // If not in list, query the database
+                    val employee = employeeDao.getEmployeeById(employeeId)
+                    emit(employee)
+                }
+            } catch (e: Exception) {
+                emit(null)
+            }
         }.stateIn(viewModelScope, SharingStarted.Lazily, null)
     }
     
@@ -159,6 +208,49 @@ class EmployeeViewModel @Inject constructor(
             } catch (e: Exception) {
                 // Handle error
             }
+        }
+    }
+    
+    fun loadSpecificEmployee(employeeId: Int) {
+        viewModelScope.launch {
+            try {
+                val employee = employeeDao.getEmployeeById(employeeId)
+                // Only update if employee exists
+                if (employee != null) {
+                    _employees.value = _employees.value.map { 
+                        if (it.id == employeeId) employee else it 
+                    }
+                }
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+    
+    fun refreshEmployeeData(employeeId: Int) {
+        viewModelScope.launch {
+            try {
+                // Force refresh the employee list
+                loadEmployees()
+                // Also load the specific employee
+                val employee = employeeDao.getEmployeeById(employeeId)
+                if (employee != null) {
+                    // Update the specific employee in the list
+                    _employees.value = _employees.value.map { 
+                        if (it.id == employeeId) employee else it 
+                    }
+                }
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+    
+    suspend fun getAllAttendance(): List<Attendance> {
+        return try {
+            attendanceDao.getAllAttendance()
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 } 
